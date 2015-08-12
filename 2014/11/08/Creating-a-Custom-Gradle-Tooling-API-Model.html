@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Creating a Custom Gradle Tooling API Model</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="//jkschneider.github.io/themes/Casper/favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/Casper/assets/css/screen.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+
+    <link rel="canonical" href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html" />
+    
+    <meta property="og:site_name" content="Jon Schneider" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Creating a Custom Gradle Tooling API Model" />
+    <meta property="og:description" content="The high level approach A custom tooling API model consists of three components: A model project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle. A plugin project..." />
+    <meta property="og:url" content="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html" />
+    <meta property="article:published_time" content="2014-11-08T08:00:00.000Z" />
+    <meta property="article:modified_time" content="2015-08-12T06:01:53.398Z" />
+    <meta property="article:tag" content="gradle" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Creating a Custom Gradle Tooling API Model" />
+    <meta name="twitter:description" content="The high level approach A custom tooling API model consists of three components: A model project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle. A plugin project..." />
+    <meta name="twitter:url" content="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Jon Schneider",
+    "author": {
+        "@type": "Person",
+        "name": "Jon Schneider",
+        "image": "https://avatars.githubusercontent.com/u/1697736?v=3",
+        "url": "undefined/author/undefined",
+        "sameAs": "https://jkschneider.github.io/"
+    },
+    "headline": "Creating a Custom Gradle Tooling API Model",
+    "url": "https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html",
+    "datePublished": "2014-11-08T08:00:00.000Z",
+    "dateModified": "2015-08-12T06:01:53.398Z",
+    "keywords": "gradle",
+    "description": "The high level approach A custom tooling API model consists of three components: A model project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle. A plugin project..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost ?" />
+    <link rel="alternate" type="application/rss+xml" title="Jon Schneider" href="https://jkschneider.github.io/rss" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
+</head>
+<body class="post-template tag-gradle">
+
+    
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav  clearfix">
+        <a class="back-button icon-arrow-left" href="https://jkschneider.github.io">Home</a>
+        <!-- <a class="subscribe-button icon-feed" href="https://jkschneider.github.io/rss/">Subscribe</a> -->
+    </nav>
+</header>
+
+<main class="content" role="main">
+
+    <article class="post tag-gradle">
+
+        <header class="post-header">
+            <h1 class="post-title">Creating a Custom Gradle Tooling API Model</h1>
+            <section class="post-meta">
+                <time class="post-date" datetime="2014-11-08">08 November 2014</time>  on <a href="https://jkschneider.github.io/tag/gradle">gradle</a>
+            </section>
+        </header>
+
+        <section class="post-content">
+            <div class="sect1">
+<h2 id="_the_high_level_approach">The high level approach</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A custom tooling API model consists of three components:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A <strong>model</strong> project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle.</p>
+</li>
+<li>
+<p>A <strong>plugin</strong> project that provides implementations of model interfaces,  registers the custom model with the tooling API model registry, and populates the model interface implementations at the right time.</p>
+</li>
+<li>
+<p>An <strong><a href="http://www.gradle.org/docs/current/userguide/init_scripts.html">init.gradle</a></strong> script to bootstrap your plugin into target Gradle projects.  We will use this approach in our example because it allows us to force a project to support our custom tooling API model without actually modifying the project.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>It is convenient to make <strong>model</strong> and <strong>plugin</strong> the two subprojects of a single multi-module project, as <strong>plugin</strong> will have a dependency on <strong>model</strong>. (FIXME: is this true?)</p>
+</div>
+<div class="paragraph">
+<p>The example project will be based off of a fork of Ben Muschko&#8217;s (@bmuschko) <a href="https://github.com/bmuschko/tooling-api-custom-model">example on Github</a>.</p>
+</div>
+<div class="paragraph">
+<p>The full code can be found <a href="https://github.com/jkschneider/tooling-api-custom-model">here</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_custom_plugin_or_tooling_api_model">Custom plugin or tooling API model?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before diving into the particulars of creating a custom tooling API model, it is important to note that in most cases, a custom Gradle plugin will suffice.</p>
+</div>
+<div class="paragraph">
+<p>You primarily need a custom tooling API if you intend to have a long-lived interaction with Gradle, or you want progress notification for individual long-lived operations.</p>
+</div>
+<div class="paragraph">
+<p>Here are some additional reasons you may want to use the Tooling API, straight from <a href="http://www.gradle.org/docs/current/userguide/embedding.html">Chapter 63</a> of the Gradle manual:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Future performance potential. The API gives Gradle the opportunity to do lots of caching, static analysis and preemptive work, to make things faster for the user.</p>
+</li>
+<li>
+<p>Notifications when things in the build change, so that UIs and models can be updated.</p>
+</li>
+<li>
+<p>Validating and prompting for user supplied configuration.</p>
+</li>
+<li>
+<p>Prompting for and managing user credentials.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you need one-off task execution where monitoring is unimportant, a custom plugin (applied to a project either directly or indirectly through an init script) is more appropriate.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_strong_model_strong_project">The <strong>model</strong> project</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The model project contains the interface that you wish to expose to the consumer of the custom tooling API model.  In our case, we will expose a simple interface called <code>CustomModel</code> that will expose a single method to allow the consumer to determine if a particular plugin has been applied to a project.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">package org.gradle.sample.plugins.toolingapi.custom;
+
+import org.gradle.tooling.model.DomainObjectSet;
+import org.gradle.tooling.model.Model;
+
+public interface CustomModel extends Model {
+    boolean hasPlugin(Class type);
+    DomainObjectSet&lt;? extends PluginInfo&gt; allPlugins();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That&#8217;s it!  In Gradle core, the "model" project is called <strong>tooling-api</strong>.  Take note that we will never provide a conventional implementation class of <code>CustomModel</code> and inside Gradle core, you will never find an implementation of interfaces that appear in <strong>tooling-api</strong>.  Instead, Gradle magically coerces implementation classes into the appropriate interfaces at just the right time, even changing method return types where appropriate, as we will see.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="http://imgs.xkcd.com/comics/abstraction.png" alt="abstraction.png">
+</div>
+</div>
+<div class="paragraph">
+<p>For the curious: this type conversion magic stems from <code>org.gradle.tooling.internal.adapter.ProtocolToModelAdapter</code>, and has its limitations, rooted in line 103 of <code>ProtocolToModelAdapter</code>&#8201;&#8212;&#8201;for automatic type conversion to take place, the target type must be an interface.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_strong_plugin_strong_project">The <strong>plugin</strong> project.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>plugin</strong> project has three responsibilities:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Provide "implementations" of the interfaces set forth in the <strong>model</strong> project.</p>
+</li>
+<li>
+<p>Register the custom tooling API model with the tooling API model registry.</p>
+</li>
+<li>
+<p>Populate the implementations of model interfaces.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Here is our implementation class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">package org.gradle.sample.plugins.toolingapi.custom;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DefaultCustomModel implements Serializable {
+    private final List&lt;String&gt; pluginClassNames;
+
+    public DefaultCustomModel(List&lt;String&gt; pluginClassNames) {
+        this.pluginClassNames = pluginClassNames;
+    }
+
+    public boolean hasPlugin(Class type) {
+        return pluginClassNames.contains(type.getName());
+    }
+
+    public List&lt;DefaultPluginInfo&gt; allPlugins() {
+        List&lt;DefaultPluginInfo&gt; plugins = new ArrayList&lt;DefaultPluginInfo&gt;();
+        for(String pluginClassName : pluginClassNames)
+            plugins.add(new DefaultPluginInfo(pluginClassName));
+        return plugins;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Curiously, <code>DefaultModel</code> does <strong>not</strong> implement <code>CustomModel</code>, nor does <code>DefaultPluginInfo</code> implement <code>PluginInfo</code>.  Instead, Gradle coerces these types into <code>CustomModel</code> and <code>PluginInfo</code> for the sake of the client.  Also note the difference between the return type of <code>List</code> vs. <code>DomainObjectSet</code> between the model interface and its implementation.  Again, Gradle performs the type conversion just in time.</p>
+</div>
+<div class="paragraph">
+<p>Finally, here is the <code>Plugin</code> implementation that registers the model and populates the model interfaces:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">public class ToolingApiCustomModelPlugin implements Plugin&lt;Project&gt; {
+    private final ToolingModelBuilderRegistry registry;
+
+    @Inject
+    public ToolingApiCustomModelPlugin(ToolingModelBuilderRegistry registry) {
+        this.registry = registry;
+    }
+
+    @Override
+    public void apply(Project project) {
+        registry.register(new CustomToolingModelBuilder());
+    }
+
+    private static class CustomToolingModelBuilder implements ToolingModelBuilder {
+        @Override
+        public boolean canBuild(String modelName) {
+            return modelName.equals(CustomModel.class.getName());
+        }
+
+        @Override
+        public Object buildAll(String modelName, Project project) {
+            List&lt;String&gt; pluginClassNames = new ArrayList&lt;String&gt;();
+
+            for(Plugin plugin : project.getPlugins()) {
+                pluginClassNames.add(plugin.getClass().getName());
+            }
+
+            return new DefaultCustomModel(pluginClassNames);
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that the <code>canBuild(String modelName)</code> method is the only point that actually refers to a <strong>model</strong> type, and the only need for a dependency on this project.</p>
+</div>
+<div class="paragraph">
+<p>So what if  <code>DefaultPluginInfo</code> didn&#8217;t cover the entire <code>PluginInfo</code> interface?  Gradle will throw a <code>org.gradle.api.tasks.TaskExecutionException</code>, with a cause like this:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Caused by: org.gradle.tooling.model.UnsupportedMethodException: Unsupported method: PluginInfo.getName().
+The version of Gradle you connect to does not support that method.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p><strong>Gotcha</strong>:  The same error occurs if the visibility of an implementation method is not public.  So if you are accustomed to programming in Groovy and are switching over to Java to provide a plugin implementation, beware of the different default visibility rules!  Remember, since we aren&#8217;t actually implementing the interface, the compiler can&#8217;t help you here.</p>
+</div>
+<div class="paragraph">
+<p>The message about the version of Gradle not supporting the method is an apparent reference to the fact that, until recently, every tooling model was provided by Gradle core itself.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bootstrapping_the_client">Bootstrapping the client</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to use our custom model, we need to apply it to a target project.  Here is the Gradle DSL code that would accomplish this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">initscript {
+    repositories {
+        maven {
+            url new File('../repo').toURI().toURL()
+        }
+    }
+
+    dependencies {
+        classpath 'org.gradle.sample.plugins.toolingapi:plugin:1.0'
+    }
+}
+
+allprojects {
+    apply plugin: org.gradle.sample.plugins.toolingapi.custom.ToolingApiCustomModelPlugin
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This could, of course, be added to the target project itself, but often we want to apply our custom model to a project without requiring changes to the project itself (as in the case of IDE integration wanting to glean information from Gradle projects it is responsible for).  In this case, adding the above code to an [init.gradle](<a href="http://www.gradle.org/docs/current/userguide/init_scripts.html" class="bare">http://www.gradle.org/docs/current/userguide/init_scripts.html</a>) file and applying it to the project through the <code>GradleConnector</code> is the solution:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">GradleConnector connector = GradleConnector.newConnector()
+connector.forProjectDirectory(new File("sample"))
+ProjectConnection connection
+
+try {
+    connection = connector.connect()
+    ModelBuilder&lt;CustomModel&gt; customModelBuilder = connection.model(CustomModel.class)
+    customModelBuilder.withArguments("--init-script", "$INIT_LOC/init.gradle")
+    CustomModel model = customModelBuilder.get()
+    assert model.hasPlugin(JavaPlugin)
+    assert model.allPlugins().find { it.name == JavaPlugin.name }
+} finally {
+    connection?.close()
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_gradle_model_implementation_classes_change_over_time">How Gradle model implementation classes change over time</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A peculiarity of this whole serialization and type coercion scheme is that the Gradle Tooling API provides models that actually change over time.  So you may be using tooling API version 2.1 and executing against a Gradle 1.6 distribution that provided implementations to the model you are requesting.</p>
+</div>
+<div class="paragraph">
+<p>So what happens when the 2.1 model interface has additional methods that weren&#8217;t dreamed up yet in 1.6?  It turns out that (in the examples that I could find) the Gradle folks have been very cautious to only add additional methods that are derivable from state that was otherwise on the implementation class.</p>
+</div>
+<div class="paragraph">
+<p>A concrete example can be found in <code>EclipseProject</code>, which has a method <code>getName()</code> that didn&#8217;t exist prior to 1.12.  As long as the implementation of <code>getName()</code> is based off of <code>DefaultEclipseProject</code> state that existed back to some pre 1.12 distribution, it still functions.  In this scenario, there are three Java artifacts in play: the <code>EclipseProject</code> interface and <code>DefaultEclipseProject</code> class provided by the tooling API version 2.1, and the <code>DefaultEclipseProject</code> class as it existed in 1.EARLIER and bundled as a runtime library in the 1.EARLIER distribution itself.  As long as Java can deserialize the 1.EARLIER serialization of <code>DefaultEclipseProject</code> onto the 2.1 version of the same, we are OK.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_our_custom_tooling_models_will_never_be_quite_as_cross_version_compatible_as_gradle_s_internal_models">Why our custom tooling models will never be quite as cross-version compatible as Gradle&#8217;s internal models</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Of course, our custom tooling models don&#8217;t have to be quite as careful about changing state over time, since we will not be packing the implementation classes with Gradle itself.</p>
+</div>
+<div class="paragraph">
+<p>This does mean, however, that the range of support for different Gradle versions that we can provide is limited by our ability to use internal Gradle constructs that have been stable for as far back as we wish to support.  Gradleware has it comparatively easy: each version of <code>DefaultEclipseProject</code> is free to have entirely different implementation details, so long as they are identical with respect to Java serialization/deserialization.</p>
+</div>
+</div>
+</div>
+        </section>
+
+        <footer class="post-footer">
+
+
+            <figure class="author-image">
+                <a class="img" href="" style="background-image: url(https://avatars.githubusercontent.com/u/1697736?v=3)"><span class="hidden">Jon Schneider's Picture</span></a>
+            </figure>
+
+            <section class="author">
+                <h4><a href="">Jon Schneider</a></h4>
+
+                    <p>Read <a href="">more posts</a> by this author.</p>
+                <div class="author-meta">
+                    <span class="author-location icon-location">Los Gatos, CA</span>
+                    <span class="author-link icon-link"><a href="https://jkschneider.github.io/">https://jkschneider.github.io/</a></span>
+                </div>
+            </section>
+
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="https://twitter.com/share?text=Creating%20a%20Custom%20Gradle%20Tooling%20API%20Model&amp;url=https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+
+    </article>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="https://jkschneider.github.io">Jon Schneider</a> &copy; 2015</section>
+        <section class="poweredby">Proudly published with <a href="http://hubpress.io">HubPress</a></section>
+    </footer>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();      
+      </script>
+
+    <script type="text/javascript" src="//jkschneider.github.io/themes/Casper/assets/js/jquery.fitvids.js?v=1.0.0"></script>
+    <script type="text/javascript" src="//jkschneider.github.io/themes/Casper/assets/js/index.js?v=1.0.0"></script>
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 = Rust Strings, Explained
+:hp-tags: rust
 
 == Introduction to &str and String
 

@@ -1,0 +1,180 @@
+= Recursive Observables with RxJava
+:published_at: 2014-11-26
+:hp-tags: rxjava, java
+
+I found myself writing a simple web crawler recently, and believed
+RxJava was an interesting fit. The push model seemed appropriate: the
+crawler would chug away digging down recursively and periodically push
+items of interest to subscribers. Parallelizing this essentially IO
+bound process (e.g. `Schedulers.io()` from
+link:https://github.com/ReactiveX/RxJava/wiki/Scheduler[here]) seemed like a
+natural fit.
+
+Unfortunately, unlike the many excellent but very linear examples of
+RxJava out there, crawlers operate recursively.
+
+Here I present a simplified example of a recursive file walker with
+recursive Observables in RxJava both in Java 8 and Groovy.
+
+== Java 8
+
+First, the final solution in all its gory detail:
+
+[code,java]
+----
+public class FileRecursion {
+    static Observable<File> listFiles(File f) {
+        if(f.isDirectory())
+            return Observable.from(f.listFiles()).flatMap(FileRecursion::listFiles);
+        return Observable.just(f);
+    }
+
+    public static void main(String[] args) {
+        Observable.just(new File("/Users/joschneider/Desktop"))
+                .flatMap(FileRecursion::listFiles)
+                .subscribe(f -> System.out.println(f.getAbsolutePath()));
+    }
+}
+----
+
+=== The source `Observable`
+
+[code,java]
+----
+Observable.just(new File("..."))
+----
+
+This is clearly an `Observable<File>`, and while we are only seeding our
+directory walker with a single file, we could just have easily seeded a
+larger list of seeds:
+
+[code,java]
+----
+List<File> manySeeds = ...
+Observable.from(manySeeds);
+----
+
+The result is the same, an `Observable<File>`.
+
+=== 2. A one-level-deep walking step
+
+We could implement a one-level-deep file walker like so:
+
+[code,java]
+----
+Observable.just(new File("..."))
+    .flatMap(f -> Observable.from(f.listFiles))
+----
+
+Notice that we are using `flatMap` here, which flattens what would be an
+`Observable<Observable<File>>` if we were using `map` back to
+`Observable<File>`. This will be important, as without `flatMap`,
+recursion would produce an absurdly nested type
+`Observable<Observable<Observable...<File>...>>`
+
+=== 3. Replacing with a recursive method reference
+
+To make our walker recurse arbitrarily deep, we use a method reference:
+
+[code,java]
+----
+Observable.just(new File("..."))
+    .flatMap(FileRecursion::listFiles)
+----
+
+Here is our recursive method:
+
+[code,java]
+----
+static Observable<File> listFiles(File f) {
+    if(f.isDirectory())
+        return Observable.from(f.listFiles()).flatMap(FileRecursion2::listFiles);
+    return Observable.just(f);
+}
+----
+
+The base case for our walker is `return Observable.just(f)`
+
+The recursive case is using `flatMap` again to incrementally flatten
+each layer of the file structure as we recurse.
+
+=== 4. Why can't we inline the recursive step as a Lambda?
+
+To walk an arbitrarily deep structure, we would love to do something
+like this:
+
+[code,java]
+----
+Observable.just(new File("..."))
+    .flatMap(f -> Observable.from(f.listFiles).flatMap(CALLMYSELF))
+----
+
+Unfortunately, there is no provision in Java 8 for a Lambda to call
+itself unless it is defined as a static field **(sigh)**. To summarize
+the
+link:http://mail.openjdk.java.net/pipermail/lambda-dev/2013-September/010965.html[discussion]
+about why:
+
+____
+this construct solves a corner case that is painful to implement, and
+hard to get right so it was ruled out
+____
+
+Even taking into account this restriction, a Lamba defined like this
+fails to compile with an 'Illegal forward reference' error **(loud
+sigh)**:
+
+[code,java]
+----
+static Func1<Integer, Integer> factorial = n -> {
+    if(n > 1) return n * factorial(n-1);
+    return 1;
+};
+----
+
+The most succinct implementation of our file walker with Lambdas is as
+follows. Notice the awkward assignment of `listFiles` after it has been
+declared to circumvent the `Illegal forward reference`. Even still,
+there are weak type guarantees doing this kind of hackery.
+
+[code,java]
+----
+public class FileRecursion {
+    static Func1<File, Observable<File>> listFiles;
+
+    public static void main(String[] args) {
+        listFiles = f -> {
+            if(f.isDirectory())
+                return Observable.from(f.listFiles()).flatMap(listFiles);
+            return Observable.just(f);
+        };
+
+        Observable.just(new File("/Users/joschneider/Desktop"))
+                .flatMap(listFiles)
+                .subscribe(f -> System.out.println(f.getAbsolutePath()));
+    }
+}
+----
+
+== Groovy
+
+Groovy gives us the ability to cut down on a bit of verbosity, but
+importantly, gives us the capability of inlining our recursive `flatMap`
+parameters.
+
+[code,groovy]
+----
+Observable.just(new File("/Users/joschneider/Desktop"))
+    .flatMap({ f ->
+        if(f.isDirectory())
+            return Observable.from(f.listFiles()).flatMap({ g -> owner.call(g) })
+        return Observable.just(f)
+    })
+    .subscribe({ File f -> println f.absolutePath })
+----
+
+The trick here is the `call` method which Groovy exposes to allow a
+`Closure` to call itself. Unfortunately there is not an immediately
+obvious way to pass the method reference to `call` to `flatMap`
+directly. Wrapping the recursive call in a closure itself and using
+`owner.call` to refer to the parent closure is the final trick.

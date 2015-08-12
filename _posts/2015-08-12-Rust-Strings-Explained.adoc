@@ -1,0 +1,39 @@
+= Rust Strings, Explained
+
+== Introduction to &str and String
+
+Why the two types?
+
+How to convert between them?
+
+== Should my function take a String or a &str?
+
+The idiomatic thing to do is take a `&str`.  Examples abound in the stdlib.  
+
+== Should my struct contain a String or a &str?
+
+???
+
+== Splitting
+
+Explain how array destructuring is a more optimal solution, but is currently in nightly and has been for two years...
+
+[code,rust]
+----
+pub struct Dependency {
+    org: String,
+    name: String,
+    rev: String
+}
+
+pub fn parse_dependency(dep: &str) -> Result<Dependency, String> {
+    let dp = dep.split(':').collect::<Vec<&str>>();
+    return match dp.len() {
+        3 => Ok(Dependency { org: dp[0].to_string(), name: dp[1].to_string(), rev: dp[2].to_string() }),
+        _ => Err("--dependency must be in the format org:name:rev".to_string())
+    };
+}
+
+----
+
+Explain how the manual cast to Vec<&str> is suboptimal because collect could return any other basic collection type.  Need it for `len()` though?

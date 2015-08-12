@@ -1,0 +1,199 @@
+= Creating a Custom Gradle Tooling API Model
+:published_at: 2014-11-08
+:hp-tags: gradle
+
+== The high level approach
+
+A custom tooling API model consists of three components:
+
+ 1. A **model** project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle.
+ 2. A **plugin** project that provides implementations of model interfaces,  registers the custom model with the tooling API model registry, and populates the model interface implementations at the right time.
+ 3. An **link:http://www.gradle.org/docs/current/userguide/init_scripts.html[init.gradle]** script to bootstrap your plugin into target Gradle projects.  We will use this approach in our example because it allows us to force a project to support our custom tooling API model without actually modifying the project.
+
+It is convenient to make **model** and **plugin** the two subprojects of a single multi-module project, as **plugin** will have a dependency on **model**. (FIXME: is this true?)
+
+The example project will be based off of a fork of Ben Muschko's (@bmuschko) link:https://github.com/bmuschko/tooling-api-custom-model[example on Github].
+
+The full code can be found link:https://github.com/jkschneider/tooling-api-custom-model[here].
+
+== Custom plugin or tooling API model?
+Before diving into the particulars of creating a custom tooling API model, it is important to note that in most cases, a custom Gradle plugin will suffice.
+
+You primarily need a custom tooling API if you intend to have a long-lived interaction with Gradle, or you want progress notification for individual long-lived operations.
+
+Here are some additional reasons you may want to use the Tooling API, straight from link:http://www.gradle.org/docs/current/userguide/embedding.html[Chapter 63] of the Gradle manual:
+
+1. Future performance potential. The API gives Gradle the opportunity to do lots of caching, static analysis and preemptive work, to make things faster for the user.
+2. Notifications when things in the build change, so that UIs and models can be updated.
+3. Validating and prompting for user supplied configuration.
+4. Prompting for and managing user credentials.
+
+If you need one-off task execution where monitoring is unimportant, a custom plugin (applied to a project either directly or indirectly through an init script) is more appropriate.
+
+== The **model** project
+
+The model project contains the interface that you wish to expose to the consumer of the custom tooling API model.  In our case, we will expose a simple interface called `CustomModel` that will expose a single method to allow the consumer to determine if a particular plugin has been applied to a project.
+
+[source,groovy]
+----
+package org.gradle.sample.plugins.toolingapi.custom;
+
+import org.gradle.tooling.model.DomainObjectSet;
+import org.gradle.tooling.model.Model;
+
+public interface CustomModel extends Model {
+    boolean hasPlugin(Class type);
+    DomainObjectSet<? extends PluginInfo> allPlugins();
+}
+----
+
+That's it!  In Gradle core, the "model" project is called **tooling-api**.  Take note that we will never provide a conventional implementation class of `CustomModel` and inside Gradle core, you will never find an implementation of interfaces that appear in **tooling-api**.  Instead, Gradle magically coerces implementation classes into the appropriate interfaces at just the right time, even changing method return types where appropriate, as we will see.  
+
+image::http://imgs.xkcd.com/comics/abstraction.png[]
+
+For the curious: this type conversion magic stems from `org.gradle.tooling.internal.adapter.ProtocolToModelAdapter`, and has its limitations, rooted in line 103 of `ProtocolToModelAdapter` -- for automatic type conversion to take place, the target type must be an interface.
+
+== The **plugin** project.
+
+The **plugin** project has three responsibilities:
+
+ 1. Provide "implementations" of the interfaces set forth in the **model** project.
+ 2. Register the custom tooling API model with the tooling API model registry.
+ 3. Populate the implementations of model interfaces.
+
+Here is our implementation class:
+
+[source,groovy]
+----
+package org.gradle.sample.plugins.toolingapi.custom;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DefaultCustomModel implements Serializable {
+    private final List<String> pluginClassNames;
+    
+    public DefaultCustomModel(List<String> pluginClassNames) {
+        this.pluginClassNames = pluginClassNames;        
+    }
+    
+    public boolean hasPlugin(Class type) {              
+        return pluginClassNames.contains(type.getName());
+    }
+
+    public List<DefaultPluginInfo> allPlugins() {
+        List<DefaultPluginInfo> plugins = new ArrayList<DefaultPluginInfo>();
+        for(String pluginClassName : pluginClassNames)
+            plugins.add(new DefaultPluginInfo(pluginClassName));
+        return plugins;
+    }
+}
+----
+
+Curiously, `DefaultModel` does *not* implement `CustomModel`, nor does `DefaultPluginInfo` implement `PluginInfo`.  Instead, Gradle coerces these types into `CustomModel` and `PluginInfo` for the sake of the client.  Also note the difference between the return type of `List` vs. `DomainObjectSet` between the model interface and its implementation.  Again, Gradle performs the type conversion just in time.
+
+Finally, here is the `Plugin` implementation that registers the model and populates the model interfaces:
+
+[source,groovy]
+----
+public class ToolingApiCustomModelPlugin implements Plugin<Project> {
+    private final ToolingModelBuilderRegistry registry;
+
+    @Inject
+    public ToolingApiCustomModelPlugin(ToolingModelBuilderRegistry registry) {
+        this.registry = registry;
+    }
+
+    @Override
+    public void apply(Project project) {
+        registry.register(new CustomToolingModelBuilder());
+    }
+
+    private static class CustomToolingModelBuilder implements ToolingModelBuilder {
+        @Override
+        public boolean canBuild(String modelName) {
+            return modelName.equals(CustomModel.class.getName());
+        }
+
+        @Override
+        public Object buildAll(String modelName, Project project) {
+            List<String> pluginClassNames = new ArrayList<String>();
+
+            for(Plugin plugin : project.getPlugins()) {
+                pluginClassNames.add(plugin.getClass().getName());
+            }
+
+            return new DefaultCustomModel(pluginClassNames);
+        }
+    }
+}
+----
+
+Notice that the `canBuild(String modelName)` method is the only point that actually refers to a **model** type, and the only need for a dependency on this project.
+
+So what if  `DefaultPluginInfo` didn't cover the entire `PluginInfo` interface?  Gradle will throw a `org.gradle.api.tasks.TaskExecutionException`, with a cause like this:
+
+> Caused by: org.gradle.tooling.model.UnsupportedMethodException: Unsupported method: PluginInfo.getName().
+The version of Gradle you connect to does not support that method.
+
+**Gotcha**:  The same error occurs if the visibility of an implementation method is not public.  So if you are accustomed to programming in Groovy and are switching over to Java to provide a plugin implementation, beware of the different default visibility rules!  Remember, since we aren't actually implementing the interface, the compiler can't help you here.
+
+The message about the version of Gradle not supporting the method is an apparent reference to the fact that, until recently, every tooling model was provided by Gradle core itself.
+
+== Bootstrapping the client
+
+In order to use our custom model, we need to apply it to a target project.  Here is the Gradle DSL code that would accomplish this:
+
+[source,groovy]
+----
+initscript {
+    repositories {
+        maven { 
+            url new File('../repo').toURI().toURL()
+        }
+    }
+
+    dependencies {
+        classpath 'org.gradle.sample.plugins.toolingapi:plugin:1.0'
+    }
+}
+
+allprojects {
+    apply plugin: org.gradle.sample.plugins.toolingapi.custom.ToolingApiCustomModelPlugin
+}
+----
+
+This could, of course, be added to the target project itself, but often we want to apply our custom model to a project without requiring changes to the project itself (as in the case of IDE integration wanting to glean information from Gradle projects it is responsible for).  In this case, adding the above code to an [init.gradle](http://www.gradle.org/docs/current/userguide/init_scripts.html) file and applying it to the project through the `GradleConnector` is the solution:
+
+[source,groovy]
+----
+GradleConnector connector = GradleConnector.newConnector()
+connector.forProjectDirectory(new File("sample"))
+ProjectConnection connection
+
+try {
+    connection = connector.connect()
+    ModelBuilder<CustomModel> customModelBuilder = connection.model(CustomModel.class)
+    customModelBuilder.withArguments("--init-script", "$INIT_LOC/init.gradle")
+    CustomModel model = customModelBuilder.get()
+    assert model.hasPlugin(JavaPlugin)
+    assert model.allPlugins().find { it.name == JavaPlugin.name }
+} finally {
+    connection?.close()
+}
+----
+
+== How Gradle model implementation classes change over time
+
+A peculiarity of this whole serialization and type coercion scheme is that the Gradle Tooling API provides models that actually change over time.  So you may be using tooling API version 2.1 and executing against a Gradle 1.6 distribution that provided implementations to the model you are requesting.
+
+So what happens when the 2.1 model interface has additional methods that weren't dreamed up yet in 1.6?  It turns out that (in the examples that I could find) the Gradle folks have been very cautious to only add additional methods that are derivable from state that was otherwise on the implementation class.
+
+A concrete example can be found in `EclipseProject`, which has a method `getName()` that didn't exist prior to 1.12.  As long as the implementation of `getName()` is based off of `DefaultEclipseProject` state that existed back to some pre 1.12 distribution, it still functions.  In this scenario, there are three Java artifacts in play: the `EclipseProject` interface and `DefaultEclipseProject` class provided by the tooling API version 2.1, and the `DefaultEclipseProject` class as it existed in 1.EARLIER and bundled as a runtime library in the 1.EARLIER distribution itself.  As long as Java can deserialize the 1.EARLIER serialization of `DefaultEclipseProject` onto the 2.1 version of the same, we are OK.
+
+== Why our custom tooling models will never be quite as cross-version compatible as Gradle's internal models
+
+Of course, our custom tooling models don't have to be quite as careful about changing state over time, since we will not be packing the implementation classes with Gradle itself.  
+
+This does mean, however, that the range of support for different Gradle versions that we can provide is limited by our ability to use internal Gradle constructs that have been stable for as far back as we wish to support.  Gradleware has it comparatively easy: each version of `DefaultEclipseProject` is free to have entirely different implementation details, so long as they are identical with respect to Java serialization/deserialization.

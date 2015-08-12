@@ -10,111 +10,153 @@
     <meta name="HandheldFriendly" content="True" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="shortcut icon" href="//jkschneider.github.io/themes/Roon/favicon.ico">
+    <link rel="shortcut icon" href="//jkschneider.github.io/themes/ichi/favicon.ico">
 
-    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:400,700,400italic,700italic|Open+Sans:400italic,700italic,700,400">
-    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/Roon/assets/css/screen.css?v=1.0.0" />
+    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1.0.0"></script>
+    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1.0.0"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/normalize.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/foundation.min.css?v=1.0.0" />
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1.0.0">
+    <![endif]-->
+    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/styles.css?v=1.0.0" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
 
     <link rel="canonical" href="https://jkschneider.github.io" />
     <meta name="generator" content="Ghost ?" />
     <link rel="alternate" type="application/rss+xml" title="Jon Schneider" href="https://jkschneider.github.io/rss" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
 </head>
-<body class="home-template user ">
+<body class="home-template">
 
-    
-<header role="banner">
-    <div class="wrap">
-        <h1><a href="https://jkschneider.github.io">Jon Schneider</a></h1>
-        <hr>
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdate" href="http://outdatedbrowser.com/">Update my browser now</a></p>
+</div>
+
+<nav class="top-bar hide-for-large-up" data-topbar >
+  <ul class="title-area">
+    <li class="name">
+
+    </li>
+    <li class="home"><a class="fi-home" href="https://jkschneider.github.io"></a></li>
+    <li class="toggle-topbar"><a href="#" id="trigger-overlay" class="fi-list"></a></li>
+  </ul>
+
+<div class="overlay overlay-scale">
+    <button type="button" class="overlay-close">Close</button>
+    <nav>
+        <ul>
+            <li><a href="https://jkschneider.github.io">Home</a></li>
+        </ul>
+    </nav>
+</div>
+
+</nav>
+
+<div class="row">
+
+<div class="small-16 medium-16 large-4 columns right head-area" >
+
+<header class="site-head">
+    <div class="vertical">
+        <div class="site-head-content inner">
+            <ul class="side-nav blog-menu show-for-large-up">
+                <li><a class="fi-home" href="https://jkschneider.github.io"></a></li>
+                <li><a class="fi-torso" href="https://jkschneider.github.io/about"></a></li>
+                <li><a class="fi-mail" href="https://jkschneider.github.io/contact"></a></li>
+            </ul>
+            
+            <h1 class="blog-title">Jon Schneider</h1>
+            <hr>
+            <p class="blog-description"></p>
+            <div class="blog-network">
+<!--                 <a href="#" class="fi-social-pinterest"></a>
+                <a href="#" class="fi-social-linkedin"></a>
+                <a href="#" class="fi-social-behance"></a>
+                <a href="#" class="fi-social-deviant-art"></a>
+                <a href="#" class="fi-social-dribbble"></a>
+                <a href="#" class="fi-social-flickr"></a>
+                <a href="#" class="fi-social-github"></a>
+                <a href="#" class="fi-social-skype"></a>
+                <a href="#" class="fi-social-snapchat"></a>
+                <a href="#" class="fi-social-steam"></a>
+                <a href="#" class="fi-social-xbox"></a>
+                <a href="#" class="fi-social-reddit"></a> -->
+                  <a href="https://github.com/jkschneider" class="fi-social-github"></a>
+                  <a href="https://twitter.com/jon_k_schneider" class="fi-social-twitter"></a>
+                  <a href="https://www.facebook.com/jonathan.k.schneider" class="fi-social-facebook"></a>
+            </div>
+        </div>
     </div>
 </header>
 
-
-<article class="post tag-rxjava tag-java ">
-
-
-    <div class="meta">
-        <time datetime="2014-11-26"><a href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-RxJava.html">November 26, 2014</a></time>
-    </div>
-
-    <header>
-        <h1><a href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-RxJava.html">Recursive Observables with RxJava</a></h1>
-    </header>
-
-    <div class="text">
-        <p>I found myself writing a simple web crawler recently, and believed RxJava was an interesting fit. The push model seemed appropriate: the crawler would chug away digging down recursively and periodically push items of interest to subscribers. Parallelizing this essentially IO bound process (e.g.</p>
-        <a href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-RxJava.html" class="readmore">Continue Reading</a>
-    </div>
-</article>
-
-<article class="post tag-gradle ">
+</div>
 
 
-    <div class="meta">
-        <time datetime="2014-11-08"><a href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html">November 08, 2014</a></time>
-    </div>
+<div class="small-16 medium-16 large-12 columns main-column left">
+    
 
-    <header>
-        <h1><a href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html">Creating a Custom Gradle Tooling API Model</a></h1>
-    </header>
 
-    <div class="text">
-        <p>The high level approach A custom tooling API model consists of three components: A model project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle. A plugin project that provides implementations of model</p>
-        <a href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html" class="readmore">Continue Reading</a>
-    </div>
-</article>
 
-<nav class="pagination" role="navigation">
+
+
+<main class="content" role="main">
+
+
+    <article class="post tag-rxjava tag-java">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2014-11-26">26 Nov 2014</time> </span>
+            <h2 class="post-title"><a href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-RxJava.html">Recursive Observables with RxJava</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>I found myself writing a simple web crawler recently, and believed RxJava was an interesting fit. The push model seemed appropriate: the crawler would chug away digging down recursively and periodically push items of interest to subscribers. Parallelizing this essentially IO bound process (e.g. Schedulers.io() from here) seemed like a natural fit. Unfortunately, unlike the many excellent but very&hellip;</p>
+        </section>
+        <a class="button read-more right small" href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-RxJava.html">Read more</a>
+        <aside class="tags fi-pricetag-multiple">Posted on <a href="https://jkschneider.github.io/tag/rxjava">rxjava</a>, <a href="https://jkschneider.github.io/tag/java"> java</a></aside>
+        <div class="clearfix"></div>
+    </article>
+
+
+    <article class="post tag-gradle">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2014-11-08">08 Nov 2014</time> </span>
+            <h2 class="post-title"><a href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html">Creating a Custom Gradle Tooling API Model</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>The high level approach A custom tooling API model consists of three components: A model project that provides an interface or set of interfaces that represent the data and behavior that you wish to extract from Gradle. A plugin project that provides implementations of model interfaces,  registers the custom model with the tooling API model registry, and populates the model interface implementati&hellip;</p>
+        </section>
+        <a class="button read-more right small" href="https://jkschneider.github.io/2014/11/08/Creating-a-Custom-Gradle-Tooling-API-Model.html">Read more</a>
+        <aside class="tags fi-pricetag-multiple">Posted on <a href="https://jkschneider.github.io/tag/gradle">gradle</a></aside>
+        <div class="clearfix"></div>
+    </article>
+
+
+    <nav class="pagination" role="navigation">
     <span class="page-number">Page 1 of 1</span>
 </nav>
 
-<footer role="contentinfo">
-    <div class="inner">
-        <div class="vcard">
-            <!-- <a href="https://jkschneider.github.io/rss" id="btn_feed" class="btn" title="Feed" target="_blank">
-                <span aria-hidden="true" data-icon=")"></span>
-                <strong>Feed</strong>
-            </a> -->
-
-
-            <div class="details">
-                <h4><a href="https://jkschneider.github.io" class="url n">Jon Schneider</a></h4>
-                <a href="https://jkschneider.github.io" class="js-remove-domain-schema">https://jkschneider.github.io</a><br>
-                <span>Published with <a href="http://hubpress.io">HubPress</a></span>
-            </div>
-        </div>
-        <div id="user_bio">
+    <div class="row">
+        <footer class="small-16 columns site-footer">
+            <!-- <a class="subscribe icon-feed" href="https://jkschneider.github.io/rss/"><span class="tooltip">Subscribe!</span></a> -->
             <div class="inner">
-                
+                <section class="published">Proudly published with <a href="http://hubpress.io" target="_blank">HubPress</a></section>
+                 <section class="copyright">All content copyright <a href="https://jkschneider.github.io/">Jon Schneider</a> &copy; 2015</section>
+                 <section class="theme-author">Theme (<a href="https://github.com/twogrey/ichi">download here</a>) developed by <a href="https://alexisdegryse.fr">Alexis Degryse</a></section>
             </div>
-        </div>
+        </footer>
     </div>
-</footer>
 
+</main>
 
+</div>
 
-
-    <script>
-
-
-        function no_schema_links () {
-            var links = document.querySelectorAll('.js-remove-domain-schema');
-            if (links) {
-                for (i = 0; i < links.length; ++i) {
-                    var link = links[i],
-                        text = link.innerHTML,
-                        no_schema = text.replace(/.*?:\/\//g, "");
-                    link.innerHTML = no_schema;
-                }
-            }
-        }
-
-        window.onload = function () {
-            no_schema_links();
-
-        }
-    </script>
+</div>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
       <script type="text/javascript">
@@ -129,8 +171,14 @@
         hljs.initHighlightingOnLoad();      
       </script>
 
+    <!--[if lte IE 8]>
+        <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1.0.0"></script>
+    <![endif]-->
+    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/min/built.js?v=1.0.0"></script>
 
-
+    <script>
+      $(document).foundation();
+    </script>
 
 </body>
 </html>

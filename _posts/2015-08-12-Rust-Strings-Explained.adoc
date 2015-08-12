@@ -2,13 +2,34 @@
 
 == Introduction to &str and String
 
-Why the two types?
+Rust has two main types of strings: `&str` and `String`.
 
-How to convert between them?
+[code,rust]
+----
+use std::net::TcpStream;
 
-== Should my function take a String or a &str?
+let addr = "127.0.0.1"; // this is a &str, a &'static str to be specific
+let mut addr_str = slice.to_string(); // this is a String
+let addr2 = &slice; // coerce back to a &str
 
-The idiomatic thing to do is take a `&str`.  Examples abound in the stdlib.  
+TcpStream::connect(addr); // no problem
+TcpStream::connect(&*addr_string); // no automatic coercion to traits of &str
+----
+
+This string `addr`, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated.
+
+A `String` like `addr_str`, on the other hand, is a heap-allocated string. This string is growable, and is also guaranteed to be UTF-8. Strings are commonly created by converting from a string slice using the `to_string` method.
+
+To coerce a `String` into a `&str`, you can use `&`, unless the destination type is a trait of &str, in which case you need to use `&*`.
+
+
+== Should my function take a String, a &str, or one of the traits of &str?
+
+Naturally, be as specific as possible when choosing between `&str` or one of the traits of `&str`.  The stdlib example above from link:https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.connect[TcpStream::connect] is a great example
+
+When choosing between `&str` and `String`, choose `&str` **virtually every time**.  Viewing a String as a &str is cheap, but converting the &str to a String involves allocating memory. No reason to do that unless you have to!
+
+If you are coming from a JVM-based language, actively fight the urge to write to `String` types.
 
 == Should my struct contain a String or a &str?
 

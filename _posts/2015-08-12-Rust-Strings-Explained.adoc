@@ -89,6 +89,16 @@ fn parse_dependency(dep: &str) -> Result<Dependency, String> {
 
 Unfortunately, `collect()` returns a link:https://doc.rust-lang.org/std/iter/trait.FromIterator.html[std:iter::FromIterator], which by itself has no useful methods.  We have to just **know** that the underlying implementor is link:https://doc.rust-lang.org/collections/vec/struct.Vec.html[collections::Vec], and as uncomfortable as this kind of manual type coercion might be, it seems very unlikely to change.
 
-What about the better way, the way of the future?
+What about the better way, the way of the future?  It involves an unstable feature called link:https://doc.rust-lang.org/book/slice-patterns.html[Slice Patterns].
 
+[code,rust]
+----
+#![feature(slice_patterns)]
 
+fn parse_dependency(dep: &str) -> Result<Dependency, &str> {
+    return match dep.split(':') {
+        [org,name,rev] => Ok(Dependency { org: org, name: name, rev: rev }),
+        _ => Err("--dependency must be in the format org:name:rev")
+    }
+}
+----

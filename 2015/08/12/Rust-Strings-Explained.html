@@ -30,15 +30,15 @@
     <meta property="og:site_name" content="Jon Schneider" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="Rust Strings, Explained" />
-    <meta property="og:description" content="Introduction to &amp;amp;str and String Rust has two main types of strings: &amp;amp;str and String. use std::net::TcpStream; let addr = &quot;127.0.0.1&quot;; // this is a &amp;amp;str, a &amp;amp;&#x27;static str to be specific let..." />
+    <meta property="og:description" content="Rust has two main types of strings: &amp;amp;str and String. In the following code sample, the string addr, also known as a &#x27;string slice&#x27;, is statically allocated, meaning that it’s saved inside our compiled program, and exists for..." />
     <meta property="og:url" content="https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html" />
     <meta property="article:published_time" content="2015-08-12T07:00:00.000Z" />
-    <meta property="article:modified_time" content="2015-08-12T20:56:57.340Z" />
+    <meta property="article:modified_time" content="2015-08-14T20:10:30.428Z" />
     <meta property="article:tag" content="rust" />
     
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Rust Strings, Explained" />
-    <meta name="twitter:description" content="Introduction to &amp;amp;str and String Rust has two main types of strings: &amp;amp;str and String. use std::net::TcpStream; let addr = &quot;127.0.0.1&quot;; // this is a &amp;amp;str, a &amp;amp;&#x27;static str to be specific let..." />
+    <meta name="twitter:description" content="Rust has two main types of strings: &amp;amp;str and String. In the following code sample, the string addr, also known as a &#x27;string slice&#x27;, is statically allocated, meaning that it’s saved inside our compiled program, and exists for..." />
     <meta name="twitter:url" content="https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html" />
     
     <script type="application/ld+json">
@@ -56,9 +56,9 @@
     "headline": "Rust Strings, Explained",
     "url": "https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html",
     "datePublished": "2015-08-12T07:00:00.000Z",
-    "dateModified": "2015-08-12T20:56:57.340Z",
+    "dateModified": "2015-08-14T20:10:30.428Z",
     "keywords": "rust",
-    "description": "Introduction to &amp;amp;str and String Rust has two main types of strings: &amp;amp;str and String. use std::net::TcpStream; let addr = &quot;127.0.0.1&quot;; // this is a &amp;amp;str, a &amp;amp;&#x27;static str to be specific let..."
+    "description": "Rust has two main types of strings: &amp;amp;str and String. In the following code sample, the string addr, also known as a &#x27;string slice&#x27;, is statically allocated, meaning that it’s saved inside our compiled program, and exists for..."
 }
     </script>
 
@@ -143,11 +143,19 @@
             <span class="post-meta label"><time datetime="2015-08-12">12 Aug 2015</time></span>
 
             <section class="post-content">
-                <div class="sect1">
-<h2 id="_introduction_to_str_and_string">Introduction to &amp;str and String</h2>
+                <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>Rust has two main types of strings: <code>&amp;str</code> and <code>String</code>.</p>
+</div>
+<div class="paragraph">
+<p>In the following code sample, the string <code>addr</code>, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated.</p>
+</div>
+<div class="paragraph">
+<p>A <code>String</code> like <code>addr_str</code>, on the other hand, is a heap-allocated string. This string is growable, and is also guaranteed to be UTF-8. Strings are commonly created by converting from a string slice using the <code>to_string</code> method.</p>
+</div>
+<div class="paragraph">
+<p>To coerce a <code>String</code> into a <code>&amp;str</code>, you can use <code>&amp;</code>, unless the destination type is a trait of &amp;str, in which case you need to use <code>&amp;*</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -160,15 +168,6 @@ let addr2 = &amp;slice; // coerce back to a &amp;str
 TcpStream::connect(addr); // no problem
 TcpStream::connect(&amp;*addr_string); // no automatic coercion to traits of &amp;str</pre>
 </div>
-</div>
-<div class="paragraph">
-<p>This string <code>addr</code>, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated.</p>
-</div>
-<div class="paragraph">
-<p>A <code>String</code> like <code>addr_str</code>, on the other hand, is a heap-allocated string. This string is growable, and is also guaranteed to be UTF-8. Strings are commonly created by converting from a string slice using the <code>to_string</code> method.</p>
-</div>
-<div class="paragraph">
-<p>To coerce a <code>String</code> into a <code>&amp;str</code>, you can use <code>&amp;</code>, unless the destination type is a trait of &amp;str, in which case you need to use <code>&amp;*</code>.</p>
 </div>
 </div>
 </div>
@@ -253,8 +252,10 @@ let hello_world = &amp;(hello + &amp;world); // coerce the result to a &amp;'sta
 <div class="paragraph">
 <p>Unfortunately, <code>collect()</code> returns a <a href="https://doc.rust-lang.org/std/iter/trait.FromIterator.html">std:iter::FromIterator</a>, which by itself has no useful methods.  We have to just <strong>know</strong> that the underlying implementor is <a href="https://doc.rust-lang.org/collections/vec/struct.Vec.html">collections::Vec</a>, and as uncomfortable as this kind of manual type coercion might be, it seems very unlikely to change.</p>
 </div>
+<div class="sect2">
+<h3 id="_slice_patterns">Slice patterns</h3>
 <div class="paragraph">
-<p>What about the better way, the way of the future?  It involves an unstable feature called <a href="https://doc.rust-lang.org/book/slice-patterns.html">Slice Patterns</a>.</p>
+<p>What about the better way, the way of the future?  Actually there are two improvements coming, and the first involves an unstable feature called <a href="https://doc.rust-lang.org/book/slice-patterns.html">Slice Patterns</a>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -266,6 +267,27 @@ fn parse_dependency(dep: &amp;str) -&gt; Result&lt;Dependency, &amp;str&gt; {
         _ =&gt; Err("--dependency must be in the format org:name:rev")
     }
 }</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_borrow_checker_improvements">Borrow checker improvements</h3>
+<div class="paragraph">
+<p>The borrow checker is, in a way, the beating heart of Rust; it’s the part of the compiler that lets us achieve memory safety without garbage collection, by catching use-after-free bugs and the like. But occasionally, the borrower checker also “catches” non-bugs, like the call to <code>dp.len()</code> on line 3 of our original code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fn parse_dependency(dep: &amp;str) -&gt; Result&lt;Dependency, String&gt; {
+    let dp = dep.split(':').collect::&lt;Vec&lt;&amp;str&gt;&gt;(); // wince
+    return match dp.len() {
+        3 =&gt; Ok(Dependency { org: dp[0], name: dp[1], rev: dp[2] }),
+        _ =&gt; Err("--dependency must be in the format org:name:rev".to_string())
+    };
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Code like this is perfectly fine, but the borrow checker struggles with it today because the <code>dp</code> variable is borrowed for the entire body of the match, preventing it from being "mutated" by the attempts to access its elements. The good folks developing Rust plan to <a href="http://blog.rust-lang.org/2015/08/14/Next-year.html">address this shortcoming soon</a> by refactoring the borrow checker to view code in terms of finer-grained (“non-lexical”) regions – a step made possible by the move to work on a <a href="https://github.com/rust-lang/rfcs/pull/1211">middle-level IR</a>.</p>
 </div>
 </div>
 </div>

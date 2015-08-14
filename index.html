@@ -111,7 +111,7 @@
 
         </header>
         <section class="post-excerpt">
-            <p>Introduction to &amp;str and String Rust has two main types of strings: &amp;str and String. use std::net::TcpStream; let addr = "127.0.0.1"; // this is a &amp;str, a &amp;'static str to be specific let mut addr_str = slice.to_string(); // this is a String let addr2 = &amp;slice; // coerce back to a &amp;str TcpStream::connect(addr); // no problem TcpStream::connect(&amp;*addr_string); // no auto&hellip;</p>
+            <p>Rust has two main types of strings: &amp;str and String. In the following code sample, the string addr, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated. A String lik&hellip;</p>
         </section>
         <a class="button read-more right small" href="https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html">Read more</a>
         <aside class="tags fi-pricetag-multiple">Posted on <a href="https://jkschneider.github.io/tag/rust">rust</a></aside>

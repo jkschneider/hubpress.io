@@ -1,9 +1,14 @@
 = Rust Strings, Explained
 :hp-tags: rust
 
-== Introduction to &str and String
 
-Rust has two main types of strings: `&str` and `String`.
+Rust has two main types of strings: `&str` and `String`.  
+
+In the following code sample, the string `addr`, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated.
+
+A `String` like `addr_str`, on the other hand, is a heap-allocated string. This string is growable, and is also guaranteed to be UTF-8. Strings are commonly created by converting from a string slice using the `to_string` method.
+
+To coerce a `String` into a `&str`, you can use `&`, unless the destination type is a trait of &str, in which case you need to use `&*`.
 
 [code,rust]
 ----
@@ -16,12 +21,6 @@ let addr2 = &slice; // coerce back to a &str
 TcpStream::connect(addr); // no problem
 TcpStream::connect(&*addr_string); // no automatic coercion to traits of &str
 ----
-
-This string `addr`, also known as a 'string slice', is statically allocated, meaning that it’s saved inside our compiled program, and exists for the entire duration it runs. The greeting binding is a reference to this statically allocated string. String slices have a fixed size, and cannot be mutated.
-
-A `String` like `addr_str`, on the other hand, is a heap-allocated string. This string is growable, and is also guaranteed to be UTF-8. Strings are commonly created by converting from a string slice using the `to_string` method.
-
-To coerce a `String` into a `&str`, you can use `&`, unless the destination type is a trait of &str, in which case you need to use `&*`.
 
 
 == Should I use a String, a &str, or one of the traits of &str?
@@ -90,7 +89,9 @@ fn parse_dependency(dep: &str) -> Result<Dependency, String> {
 
 Unfortunately, `collect()` returns a link:https://doc.rust-lang.org/std/iter/trait.FromIterator.html[std:iter::FromIterator], which by itself has no useful methods.  We have to just **know** that the underlying implementor is link:https://doc.rust-lang.org/collections/vec/struct.Vec.html[collections::Vec], and as uncomfortable as this kind of manual type coercion might be, it seems very unlikely to change.
 
-What about the better way, the way of the future?  It involves an unstable feature called link:https://doc.rust-lang.org/book/slice-patterns.html[Slice Patterns].
+=== Slice patterns
+
+What about the better way, the way of the future?  Actually there are two improvements coming, and the first involves an unstable feature called link:https://doc.rust-lang.org/book/slice-patterns.html[Slice Patterns].
 
 [code,rust]
 ----
@@ -103,3 +104,21 @@ fn parse_dependency(dep: &str) -> Result<Dependency, &str> {
     }
 }
 ----
+
+=== Borrow checker improvements
+
+The borrow checker is, in a way, the beating heart of Rust; it’s the part of the compiler that lets us achieve memory safety without garbage collection, by catching use-after-free bugs and the like. But occasionally, the borrower checker also “catches” non-bugs, like the call to `dp.len()` on line 3 of our original code:
+
+[code,rust]
+----
+fn parse_dependency(dep: &str) -> Result<Dependency, String> {
+    let dp = dep.split(':').collect::<Vec<&str>>(); // wince
+    return match dp.len() {
+        3 => Ok(Dependency { org: dp[0], name: dp[1], rev: dp[2] }),
+        _ => Err("--dependency must be in the format org:name:rev".to_string())
+    };
+}
+
+----
+
+Code like this is perfectly fine, but the borrow checker struggles with it today because the `dp` variable is borrowed for the entire body of the match, preventing it from being "mutated" by the attempts to access its elements. The good folks developing Rust plan to link:http://blog.rust-lang.org/2015/08/14/Next-year.html[address this shortcoming soon] by refactoring the borrow checker to view code in terms of finer-grained (“non-lexical”) regions – a step made possible by the move to work on a link:https://github.com/rust-lang/rfcs/pull/1211[middle-level IR].

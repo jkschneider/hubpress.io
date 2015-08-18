@@ -9,7 +9,11 @@ Take Spek's concept of `beforeOn` and `afterOn` and generalize it to simply `aft
 
 == Diagrammed Assertions
 
+Based on its similar type system, Pieter Niederwieser's link:https://github.com/pniederw/expecty[Expecty] Scala implementation of diagrammed assertions should provide an adequate set of hints as to how to accomplish this in Kotlin.  
+
 == Implicit Assertions
+
+Expecty also contains implicit assertions, but accomplishes it with Scala macros.  We could look for the presence of a certain function invocation, e.g. `it`, use ASM to inject an `assertTrue` diagrammed assertion around each of the statements contained in its `It.() -> Unit` parameter.
 
 == Data Tables
 

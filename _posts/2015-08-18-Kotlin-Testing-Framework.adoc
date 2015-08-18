@@ -17,7 +17,12 @@ Expecty also contains implicit assertions, but accomplishes it with Scala macros
 
 == Data Tables
 
+TBD
+
 == Parameterized Test Names
+
+TBD
 
 == Mocking
 
+TBD

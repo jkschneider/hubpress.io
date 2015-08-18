@@ -1,6 +1,7 @@
 = Kotlin Testing Framework
 :hp-tags: kotlin
 
+This serves as a rough design document for a Kotlin-based specification framework.  The goal is to provide a rich testing framework unifying beneficial concepts from both Spock and Jasmine.  Spek serves as a good working start for providing an idiomatic Kotlin framework.
 
 == Lifecycle Hooks
 

@@ -1,0 +1,18 @@
+= Kotlin Testing Framework
+:hp-tags: kotlin
+
+
+== Lifecycle Hooks
+
+Take Spek's concept of `beforeOn` and `afterOn` and generalize it to simply `after` and `before` and allow them to be executed at any scope (e.g. given, on, and it).  A given-scoped `after` is roughly equivalent to JUnit's `@AfterClass` and a on-scoped `after` is roughly equivalent to JUnit's `@After`.  There is no corollary to an it-scoped given in JUnit, though there is in Jasmine.
+
+== Diagrammed Assertions
+
+== Implicit Assertions
+
+== Data Tables
+
+== Parameterized Test Names
+
+== Mocking
+

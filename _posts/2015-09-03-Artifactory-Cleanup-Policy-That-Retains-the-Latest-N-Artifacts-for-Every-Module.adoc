@@ -1,3 +1,4 @@
 = Artifactory Cleanup Policy That Retains the Latest N Artifacts for Every Module
 :hp-tags: artifactory
 
+http://www.jfrog.com/blog/advanced-cleanup-using-artifactory-query-language-aql/

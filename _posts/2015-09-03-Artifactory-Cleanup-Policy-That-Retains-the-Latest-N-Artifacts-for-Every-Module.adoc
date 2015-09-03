@@ -1,0 +1,3 @@
+= Artifactory Cleanup Policy That Retains the Latest N Artifacts for Every Module
+:hp-tags: artifactory
+

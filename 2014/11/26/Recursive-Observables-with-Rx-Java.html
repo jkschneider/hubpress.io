@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <title>Recursive Observables with RxJava</title>
+
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <meta name="description" content="">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Recursive Observables with RxJava">
+    <meta name="twitter:description" content="">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Recursive Observables with RxJava">
+    <meta property="og:description" content="">
+
+    <!-- <meta name="twitter:site" content="">
+
+<meta name="twitter:creator" content="">
+
+<meta name="google-site-verification" content="">
+
+<meta property="fb:admins" content="">
+ -->
+
+    <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <link href="/apple-touch-icon-precomposed.png" rel="apple-touch-icon">
+
+    <link href="//fonts.googleapis.com/" rel="dns-prefetch">
+    <link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400&subset=latin,latin-ext" rel="stylesheet">
+
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/main.min.css?v=1.0.0"/>
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/custom.css?v=1.0.0"/>
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1.0.0"/>
+
+
+
+
+    <script type="text/javascript">
+      var ga_ua = 'UA-XXXXX-X';
+      
+      var disqus_shortname = 'example';
+      
+      var enable_pjax = true;
+
+      // Pace Options
+      // ==============
+      window.paceOptions = {
+        catchupTime: 100,
+        minTime: 100,
+        elements: false,
+        restartOnRequestAfter: 500,
+        startOnPageLoad: false
+      }
+
+      // Ghostium Globals
+      // ==============
+      window.GHOSTIUM = {};
+      GHOSTIUM.haveGA = typeof ga_ua !== 'undefined' && ga_ua !== 'UA-XXXXX-X';
+      GHOSTIUM.haveDisqus = typeof disqus_shortname !== 'undefined' && disqus_shortname !== 'example';
+      GHOSTIUM.enablePjax = typeof enable_pjax !== 'undefined' ? enable_pjax : true;
+    </script>
+
+    <script src="//jkschneider.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1.0.0"></script>
+
+    <link rel="canonical" href="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-Rx-Java.html" />
+    
+    <meta property="og:site_name" content="Jon Schneider" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Recursive Observables with RxJava" />
+    <meta property="og:description" content="I found myself writing a simple web crawler recently, and believed RxJava was an interesting fit. The push model seemed appropriate: the crawler would chug away digging down recursively and periodically push items of interest to subscribers. Parallelizing this essentially..." />
+    <meta property="og:url" content="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-Rx-Java.html" />
+    <meta property="article:published_time" content="2014-11-26T08:00:00.000Z" />
+    <meta property="article:modified_time" content="2016-04-05T20:10:08.278Z" />
+    <meta property="article:tag" content="rxjava" />
+    <meta property="article:tag" content="java" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Recursive Observables with RxJava" />
+    <meta name="twitter:description" content="I found myself writing a simple web crawler recently, and believed RxJava was an interesting fit. The push model seemed appropriate: the crawler would chug away digging down recursively and periodically push items of interest to subscribers. Parallelizing this essentially..." />
+    <meta name="twitter:url" content="https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-Rx-Java.html" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Jon Schneider",
+    "author": {
+        "@type": "Person",
+        "name": "Jon Schneider",
+        "image": "https://avatars.githubusercontent.com/u/1697736?v=3",
+        "url": "undefined/author/undefined",
+        "sameAs": "https://jkschneider.github.io/"
+    },
+    "headline": "Recursive Observables with RxJava",
+    "url": "https://jkschneider.github.io/2014/11/26/Recursive-Observables-with-Rx-Java.html",
+    "datePublished": "2014-11-26T08:00:00.000Z",
+    "dateModified": "2016-04-05T20:10:08.278Z",
+    "keywords": "rxjava,  java",
+    "description": "I found myself writing a simple web crawler recently, and believed RxJava was an interesting fit. The push model seemed appropriate: the crawler would chug away digging down recursively and periodically push items of interest to subscribers. Parallelizing this essentially..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost ?" />
+    <link rel="alternate" type="application/rss+xml" title="Jon Schneider" href="https://jkschneider.github.io/rss" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
+  </head>
+  <body class="post-template tag-rxjava tag-java">
+
+    <button data-action="open-drawer" id="drawer-button" class="drawer-button"><i class="fa fa-bars"></i></button>
+    <nav tabindex="-1" class="drawer">
+      <div class="drawer-container">
+        <!--.drawer-search(role="search")-->
+        <ul role="navigation" class="drawer-list">
+          
+          <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io" data-pjax>
+              <i class="fa fa-home"></i>Home
+            </a>
+          </li>
+          <!-- <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io" title="Jon Schneider" data-pjax>
+              <i class="fa fa-list-alt"></i>All posts
+            </a>
+          </li> -->
+          <!--
+          <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io/rss/">
+              <i class="fa fa-rss"></i>Subscribe to Feed
+            </a>
+          </li>
+          -->
+          <li class="drawer-list-divider"></li>
+          <li class="drawer-list-item drawer-list-title">
+            Follow me
+          </li>
+          
+          
+          <li class="drawer-list-item">
+            <a href="https://twitter.com/jon_k_schneider" title="Twitter" target="_blank">
+              <i class="fa fa-twitter"></i>Twitter
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="https://github.com/jkschneider" title="Github" target="_blank">
+              <i class="fa fa-github"></i>Github
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="www.linkedin.com/in/jonkschneider" title="LinkedIn" target="_blank">
+              <i class="fa fa-linkedin"></i>LinkedIn
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="mailto:jkschneider@gmail.com" title="Email" target="_blank">
+              <i class="fa fa-envelope-o"></i>Email
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="drawer-overlay"></div>
+    <main id="container" role="main" class="container">
+      <div class="surface">
+        <div class="surface-container">
+          <div data-pjax-container class="content">
+            
+<section class="wrapper wrapper-post">
+  <div class="wrapper-container">
+    <article itemscope itemtype="http://schema.org/BlogPosting" role="article" class="post post tag-rxjava tag-java">
+        <section class="post-container">
+          <header class="post-header">
+            <ul class="post-meta-list">
+              <li class="post-meta-item">
+                <time datetime="2014-11-26" itemprop="datePublished">
+                  2014-11-26 00:00:00<ago class="ago">
+                </time>
+              </li>
+                <li class="post-meta-item">
+                  <span class="tags"><i class="fa fa-tags"></i>
+                      <span>
+                      <a href="https://jkschneider.github.io/tag/rxjava">rxjava</a>, <a href="https://jkschneider.github.io/tag/java"> java</a></span>
+                  </span>
+                </li>
+              <li class="post-meta-item">
+                <a href="#disqus_thread" data-disqus-identifier="">Comments</a>
+              </li>
+            </ul>
+            <h1 itemprop="name headline" class="post-title"><a href="/2014/11/26/Recursive-Observables-with-RxJava.html" itemprop="url" data-pjax title="Recursive Observables with RxJava">Recursive Observables with RxJava</a></h1>
+            <!--h2 itemprop="about" class="post-subtitle"></h2-->
+          </header>
+          <aside class="post-side">
+            <div class="post-author">
+                <a href="https://jkschneider.github.io/" class="post-author-avatar">
+                  <img src="https://avatars.githubusercontent.com/u/1697736?v=3" alt="Jon Schneider">
+                </a>
+              <div class="post-author-info">
+                <a href="https://jkschneider.github.io/" class="post-author-name">
+                  Jon Schneider
+                </a>
+                <p class="post-author-bio"></p>
+              </div>
+            </div>
+          </aside>
+          <div itemprop="articleBody" class="post-body">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>I found myself writing a simple web crawler recently, and believed
+RxJava was an interesting fit. The push model seemed appropriate: the
+crawler would chug away digging down recursively and periodically push
+items of interest to subscribers. Parallelizing this essentially IO
+bound process (e.g. <code>Schedulers.io()</code> from
+<a href="https://github.com/ReactiveX/RxJava/wiki/Scheduler">here</a>) seemed like a
+natural fit.</p>
+</div>
+<div class="paragraph">
+<p>Unfortunately, unlike the many excellent but very linear examples of
+RxJava out there, crawlers operate recursively.</p>
+</div>
+<div class="paragraph">
+<p>Here I present a simplified example of a recursive file walker with
+recursive Observables in RxJava both in Java 8 and Groovy.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_java_8">Java 8</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>First, the final solution in all its gory detail:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>public class FileRecursion {
+    static Observable&lt;File&gt; listFiles(File f) {
+        if(f.isDirectory())
+            return Observable.from(f.listFiles()).flatMap(FileRecursion::listFiles);
+        return Observable.just(f);
+    }
+
+    public static void main(String[] args) {
+        Observable.just(new File("/Users/joschneider/Desktop"))
+                .flatMap(FileRecursion::listFiles)
+                .subscribe(f -&gt; System.out.println(f.getAbsolutePath()));
+    }
+}</pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_source_code_observable_code">The source <code>Observable</code></h3>
+<div class="listingblock">
+<div class="content">
+<pre>Observable.just(new File("..."))</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is clearly an <code>Observable&lt;File&gt;</code>, and while we are only seeding our
+directory walker with a single file, we could just have easily seeded a
+larger list of seeds:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>List&lt;File&gt; manySeeds = ...
+Observable.from(manySeeds);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The result is the same, an <code>Observable&lt;File&gt;</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_a_one_level_deep_walking_step">2. A one-level-deep walking step</h3>
+<div class="paragraph">
+<p>We could implement a one-level-deep file walker like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Observable.just(new File("..."))
+    .flatMap(f -&gt; Observable.from(f.listFiles))</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that we are using <code>flatMap</code> here, which flattens what would be an
+<code>Observable&lt;Observable&lt;File&gt;&gt;</code> if we were using <code>map</code> back to
+<code>Observable&lt;File&gt;</code>. This will be important, as without <code>flatMap</code>,
+recursion would produce an absurdly nested type
+<code>Observable&lt;Observable&lt;Observable&#8230;&#8203;&lt;File&gt;&#8230;&#8203;&gt;&gt;</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_replacing_with_a_recursive_method_reference">3. Replacing with a recursive method reference</h3>
+<div class="paragraph">
+<p>To make our walker recurse arbitrarily deep, we use a method reference:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Observable.just(new File("..."))
+    .flatMap(FileRecursion::listFiles)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is our recursive method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>static Observable&lt;File&gt; listFiles(File f) {
+    if(f.isDirectory())
+        return Observable.from(f.listFiles()).flatMap(FileRecursion2::listFiles);
+    return Observable.just(f);
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The base case for our walker is <code>return Observable.just(f)</code></p>
+</div>
+<div class="paragraph">
+<p>The recursive case is using <code>flatMap</code> again to incrementally flatten
+each layer of the file structure as we recurse.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_why_can_t_we_inline_the_recursive_step_as_a_lambda">4. Why can&#8217;t we inline the recursive step as a Lambda?</h3>
+<div class="paragraph">
+<p>To walk an arbitrarily deep structure, we would love to do something
+like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Observable.just(new File("..."))
+    .flatMap(f -&gt; Observable.from(f.listFiles).flatMap(CALLMYSELF))</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unfortunately, there is no provision in Java 8 for a Lambda to call
+itself unless it is defined as a static field <strong>(sigh)</strong>. To summarize
+the
+<a href="http://mail.openjdk.java.net/pipermail/lambda-dev/2013-September/010965.html">discussion</a>
+about why:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>this construct solves a corner case that is painful to implement, and
+hard to get right so it was ruled out</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>Even taking into account this restriction, a Lamba defined like this
+fails to compile with an 'Illegal forward reference' error <strong>(loud
+sigh)</strong>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>static Func1&lt;Integer, Integer&gt; factorial = n -&gt; {
+    if(n &gt; 1) return n * factorial(n-1);
+    return 1;
+};</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The most succinct implementation of our file walker with Lambdas is as
+follows. Notice the awkward assignment of <code>listFiles</code> after it has been
+declared to circumvent the <code>Illegal forward reference</code>. Even still,
+there are weak type guarantees doing this kind of hackery.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>public class FileRecursion {
+    static Func1&lt;File, Observable&lt;File&gt;&gt; listFiles;
+
+    public static void main(String[] args) {
+        listFiles = f -&gt; {
+            if(f.isDirectory())
+                return Observable.from(f.listFiles()).flatMap(listFiles);
+            return Observable.just(f);
+        };
+
+        Observable.just(new File("/Users/joschneider/Desktop"))
+                .flatMap(listFiles)
+                .subscribe(f -&gt; System.out.println(f.getAbsolutePath()));
+    }
+}</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_groovy">Groovy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Groovy gives us the ability to cut down on a bit of verbosity, but
+importantly, gives us the capability of inlining our recursive <code>flatMap</code>
+parameters.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Observable.just(new File("/Users/joschneider/Desktop"))
+    .flatMap({ f -&gt;
+        if(f.isDirectory())
+            return Observable.from(f.listFiles()).flatMap({ g -&gt; owner.call(g) })
+        return Observable.just(f)
+    })
+    .subscribe({ File f -&gt; println f.absolutePath })</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The trick here is the <code>call</code> method which Groovy exposes to allow a
+<code>Closure</code> to call itself. Unfortunately there is not an immediately
+obvious way to pass the method reference to <code>call</code> to <code>flatMap</code>
+directly. Wrapping the recursive call in a closure itself and using
+<code>owner.call</code> to refer to the parent closure is the final trick.</p>
+</div>
+</div>
+</div>
+          </div>
+          <footer class="post-footer">
+            <div itemprop="author" itemscope itemtype="http://schema.org/Person" class="post-author">
+                <a href="https://jkschneider.github.io/" class="post-author-avatar">
+                  <img itemprop="image" src="https://avatars.githubusercontent.com/u/1697736?v=3" alt="Jon Schneider">
+                </a>
+              <div class="post-author-info">
+                <h4 class="post-footer-heading">Written By</h4>
+                <a href="https://jkschneider.github.io/" itemprop="url" class="post-author-name">
+                  <span itemprop="name">Jon Schneider</span>
+                </a>
+                <p itemprop="description" class="post-author-bio"></p>
+                  <p class="post-author-location">Los Gatos, CA</p>
+                  <p class="post-author-website">
+                    <a href="https://jkschneider.github.io/" rel="nofollow">https://jkschneider.github.io/</a>
+                  </p>
+                <p class="post-info">
+                  <b class="post-info-title">Published on</b>
+                  <time class="post-date">November 26, 2014</time>
+                </p>
+              </div>
+            </div>
+            <div class="post-social">
+              <h4 class="post-footer-heading">Spread the word</h4>
+              <a href="#" data-action="share-twitter"><i class="fa fa-fw fa-lg fa-twitter"></i></a>
+              <a href="#" data-action="share-facebook"><i class="fa fa-fw fa-lg fa-facebook"></i></a>
+              <a href="#" data-action="share-gplus"><i class="fa fa-fw fa-lg fa-google-plus"></i></a>
+            </div>
+          </footer>
+        </section>
+      <section itemprop="comment" class="post-comments">
+        <div id="disqus_thread"></div>
+      </section>
+    </article>
+
+    <footer role="contentinfo" class="footer">
+      <p><small>Copyright &copy; <span itemprop="copyrightHolder">Jon Schneider</span>. 2016. All Rights Reserved.</small></p>
+      <p><small><a href="http://ghostium.oswaldoacauan.com/" target="_blank">Ghostium Theme</a> by <a href="http://twitter.com/oswaldoacauan" target="_blank">@oswaldoacauan</a></small></p>
+      <p><small>Adapted by <a href="https://twitter.com/mgreau">Maxime Gréau</a></small></p>
+      <p><small>Published with <a href="http://hubpress.io">HubPress</a></small></p>
+    </footer>
+  </div>
+</section>
+
+
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();      
+      </script>
+
+    <script src="//jkschneider.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1.0.0"></script>
+
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-66249645-1', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+
+  </body>
+</html>

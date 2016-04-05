@@ -1,29 +1,76 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
     <title>Rust Strings, Explained</title>
-    <meta name="description" content="" />
 
-    <meta name="HandheldFriendly" content="True" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-    <link rel="shortcut icon" href="//jkschneider.github.io/themes/ichi/favicon.ico">
+    <meta name="description" content="">
 
-    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1.0.0"></script>
-    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1.0.0"></script>
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Rust Strings, Explained">
+    <meta name="twitter:description" content="">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Rust Strings, Explained">
+    <meta property="og:description" content="">
+
+    <!-- <meta name="twitter:site" content="">
+
+<meta name="twitter:creator" content="">
+
+<meta name="google-site-verification" content="">
+
+<meta property="fb:admins" content="">
+ -->
+
+    <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <link href="/apple-touch-icon-precomposed.png" rel="apple-touch-icon">
+
+    <link href="//fonts.googleapis.com/" rel="dns-prefetch">
+    <link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400&subset=latin,latin-ext" rel="stylesheet">
+
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/main.min.css?v=1.0.0"/>
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/custom.css?v=1.0.0"/>
+    <link rel="stylesheet" href="//jkschneider.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1.0.0"/>
 
 
-    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/normalize.css?v=1.0.0" />
-    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/foundation.min.css?v=1.0.0" />
-    <!--[if lte IE 8]>
-        <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1.0.0">
-    <![endif]-->
-    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1.0.0" />
-    <link rel="stylesheet" type="text/css" href="//jkschneider.github.io/themes/ichi/assets/css/styles.css?v=1.0.0" />
-    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
+
+
+    <script type="text/javascript">
+      var ga_ua = 'UA-XXXXX-X';
+      
+      var disqus_shortname = 'example';
+      
+      var enable_pjax = true;
+
+      // Pace Options
+      // ==============
+      window.paceOptions = {
+        catchupTime: 100,
+        minTime: 100,
+        elements: false,
+        restartOnRequestAfter: 500,
+        startOnPageLoad: false
+      }
+
+      // Ghostium Globals
+      // ==============
+      window.GHOSTIUM = {};
+      GHOSTIUM.haveGA = typeof ga_ua !== 'undefined' && ga_ua !== 'UA-XXXXX-X';
+      GHOSTIUM.haveDisqus = typeof disqus_shortname !== 'undefined' && disqus_shortname !== 'example';
+      GHOSTIUM.enablePjax = typeof enable_pjax !== 'undefined' ? enable_pjax : true;
+    </script>
+
+    <script src="//jkschneider.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1.0.0"></script>
 
     <link rel="canonical" href="https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html" />
     
@@ -33,7 +80,7 @@
     <meta property="og:description" content="Rust has two main types of strings: &amp;amp;str and String. In the following code sample, the string addr, also known as a &#x27;string slice&#x27;, is statically allocated, meaning that it’s saved inside our compiled program, and exists for..." />
     <meta property="og:url" content="https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html" />
     <meta property="article:published_time" content="2015-08-12T07:00:00.000Z" />
-    <meta property="article:modified_time" content="2015-08-14T20:10:30.428Z" />
+    <meta property="article:modified_time" content="2016-04-05T20:10:08.277Z" />
     <meta property="article:tag" content="rust" />
     
     <meta name="twitter:card" content="summary" />
@@ -56,7 +103,7 @@
     "headline": "Rust Strings, Explained",
     "url": "https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html",
     "datePublished": "2015-08-12T07:00:00.000Z",
-    "dateModified": "2015-08-14T20:10:30.428Z",
+    "dateModified": "2016-04-05T20:10:08.277Z",
     "keywords": "rust",
     "description": "Rust has two main types of strings: &amp;amp;str and String. In the following code sample, the string addr, also known as a &#x27;string slice&#x27;, is statically allocated, meaning that it’s saved inside our compiled program, and exists for..."
 }
@@ -65,85 +112,107 @@
     <meta name="generator" content="Ghost ?" />
     <link rel="alternate" type="application/rss+xml" title="Jon Schneider" href="https://jkschneider.github.io/rss" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/default.min.css">
-</head>
-<body class="post-template tag-rust">
+  </head>
+  <body class="post-template tag-rust">
 
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdate" href="http://outdatedbrowser.com/">Update my browser now</a></p>
-</div>
-
-<nav class="top-bar hide-for-large-up" data-topbar style="background: none">
-  <ul class="title-area">
-    <li class="name">
-
-    </li>
-    <li class="home"><a class="fi-home" href="https://jkschneider.github.io"></a></li>
-    <li class="toggle-topbar"><a href="#" id="trigger-overlay" class="fi-list"></a></li>
-  </ul>
-
-<div class="overlay overlay-scale">
-    <button type="button" class="overlay-close">Close</button>
-    <nav>
-        <ul>
-            <li><a href="https://jkschneider.github.io">Home</a></li>
+    <button data-action="open-drawer" id="drawer-button" class="drawer-button"><i class="fa fa-bars"></i></button>
+    <nav tabindex="-1" class="drawer">
+      <div class="drawer-container">
+        <!--.drawer-search(role="search")-->
+        <ul role="navigation" class="drawer-list">
+          
+          <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io" data-pjax>
+              <i class="fa fa-home"></i>Home
+            </a>
+          </li>
+          <!-- <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io" title="Jon Schneider" data-pjax>
+              <i class="fa fa-list-alt"></i>All posts
+            </a>
+          </li> -->
+          <!--
+          <li class="drawer-list-item">
+            <a href="https://jkschneider.github.io/rss/">
+              <i class="fa fa-rss"></i>Subscribe to Feed
+            </a>
+          </li>
+          -->
+          <li class="drawer-list-divider"></li>
+          <li class="drawer-list-item drawer-list-title">
+            Follow me
+          </li>
+          
+          
+          <li class="drawer-list-item">
+            <a href="https://twitter.com/jon_k_schneider" title="Twitter" target="_blank">
+              <i class="fa fa-twitter"></i>Twitter
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="https://github.com/jkschneider" title="Github" target="_blank">
+              <i class="fa fa-github"></i>Github
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="www.linkedin.com/in/jonkschneider" title="LinkedIn" target="_blank">
+              <i class="fa fa-linkedin"></i>LinkedIn
+            </a>
+          </li>
+          <li class="drawer-list-item">
+            <a href="mailto:jkschneider@gmail.com" title="Email" target="_blank">
+              <i class="fa fa-envelope-o"></i>Email
+            </a>
+          </li>
         </ul>
+      </div>
     </nav>
-</div>
 
-</nav>
-
-<div class="row">
-
-<div class="small-16 medium-16 large-4 columns right head-area bgimage" style="background-image: url(https://raw.githubusercontent.com/jkschneider/jkschneider.github.io/master/images/blocks.jpg)">
-
-<header class="site-head">
-    <div class="vertical">
-        <div class="site-head-content inner">
-            <ul class="side-nav blog-menu show-for-large-up">
-                <li><a class="fi-home" href="https://jkschneider.github.io"></a></li>
-                <li><a class="fi-social-twitter" href="https://twitter.com/jon_k_schneider"></a></li>
-                <li><a class="fi-social-github" href="https://github.com/jkschneider"></a></li>
+    <div class="drawer-overlay"></div>
+    <main id="container" role="main" class="container">
+      <div class="surface">
+        <div class="surface-container">
+          <div data-pjax-container class="content">
+            
+<section class="wrapper wrapper-post">
+  <div class="wrapper-container">
+    <article itemscope itemtype="http://schema.org/BlogPosting" role="article" class="post post tag-rust">
+        <section class="post-container">
+          <header class="post-header">
+            <ul class="post-meta-list">
+              <li class="post-meta-item">
+                <time datetime="2015-08-12" itemprop="datePublished">
+                  2015-08-12 00:00:00<ago class="ago">
+                </time>
+              </li>
+                <li class="post-meta-item">
+                  <span class="tags"><i class="fa fa-tags"></i>
+                      <span>
+                      <a href="https://jkschneider.github.io/tag/rust">rust</a></span>
+                  </span>
+                </li>
+              <li class="post-meta-item">
+                <a href="#disqus_thread" data-disqus-identifier="">Comments</a>
+              </li>
             </ul>
-            <a class="blog-logo" href="https://jkschneider.github.io"><img alt="Jon Schneider" src="https://raw.githubusercontent.com/jkschneider/jkschneider.github.io/master/images/logo.jpg" alt="Blog Logo" /></a>
-            <h1 class="blog-title">Jon Schneider</h1>
-            <hr>
-            <p class="blog-description"></p>
-            <div class="blog-network">
-<!--                 <a href="#" class="fi-social-pinterest"></a>
-                <a href="#" class="fi-social-linkedin"></a>
-                <a href="#" class="fi-social-behance"></a>
-                <a href="#" class="fi-social-deviant-art"></a>
-                <a href="#" class="fi-social-dribbble"></a>
-                <a href="#" class="fi-social-flickr"></a>
-                <a href="#" class="fi-social-github"></a>
-                <a href="#" class="fi-social-skype"></a>
-                <a href="#" class="fi-social-snapchat"></a>
-                <a href="#" class="fi-social-steam"></a>
-                <a href="#" class="fi-social-xbox"></a>
-                <a href="#" class="fi-social-reddit"></a> -->
+            <h1 itemprop="name headline" class="post-title"><a href="/2015/08/12/Rust-Strings-Explained.html" itemprop="url" data-pjax title="Rust Strings, Explained">Rust Strings, Explained</a></h1>
+            <!--h2 itemprop="about" class="post-subtitle"></h2-->
+          </header>
+          <aside class="post-side">
+            <div class="post-author">
+                <a href="https://jkschneider.github.io/" class="post-author-avatar">
+                  <img src="https://avatars.githubusercontent.com/u/1697736?v=3" alt="Jon Schneider">
+                </a>
+              <div class="post-author-info">
+                <a href="https://jkschneider.github.io/" class="post-author-name">
+                  Jon Schneider
+                </a>
+                <p class="post-author-bio"></p>
+              </div>
             </div>
-        </div>
-    </div>
-</header>
-
-</div>
-
-
-<div class="small-16 medium-16 large-12 columns main-column left">
-    
-
-<main class="content" role="main">
-
-    <article class="post tag-rust">
-
-
-            <h1 class="post-title">Rust Strings, Explained</h1>
-
-            <span class="post-meta label"><time datetime="2015-08-12">12 Aug 2015</time></span>
-
-            <section class="post-content">
-                <div id="preamble">
+          </aside>
+          <div itemprop="articleBody" class="post-body">
+            <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>Rust has two main types of strings: <code>&amp;str</code> and <code>String</code>.</p>
@@ -292,56 +361,55 @@ fn parse_dependency(dep: &amp;str) -&gt; Result&lt;Dependency, &amp;str&gt; {
 </div>
 </div>
 </div>
-                        <aside class="tags fi-pricetag-multiple">Posted on <a href="https://jkschneider.github.io/tag/rust">rust</a></aside>
-            </section>
-            <hr>
-            <footer class="post-footer">
-
-                <section class="share">
-                    <h4>Liked this post ? Share it.</h4>
-                    <a class="fi-social-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html"
-                        onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
-                    </a>
-                    <a class="fi-social-twitter" href="https://twitter.com/share?text=Rust%20Strings%2C%20Explained&amp;url=https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html"
-                        onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
-                    </a>
-                    <a class="fi-social-google-plus" href="https://plus.google.com/share?url=https://jkschneider.github.io/2015/08/12/Rust-Strings-Explained.html"
-                       onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
-                    </a>
-                </section>
-
-                <section class="author">
-                    <header>
-                        <span>About the author</span>
-                    </header>
-                    <section>
-                        <h4>Jon Schneider</h4>
-                        <img src="https://avatars.githubusercontent.com/u/1697736?v=3">
-                        <span>Los Gatos, CA</span>
-                        <a href="https://jkschneider.github.io/">https://jkschneider.github.io/</a>
-                    </section>
-                    <footer>
-                         <p></p>
-                    </footer>
-                </section>
-
-        <div class="clearfix"></div>
-                    <hr>
-
-            </footer>
-
-        <h3 class="title-disqus"><span class="fi-comments"></span>Discussions</h3>
-
-
-
-
+          </div>
+          <footer class="post-footer">
+            <div itemprop="author" itemscope itemtype="http://schema.org/Person" class="post-author">
+                <a href="https://jkschneider.github.io/" class="post-author-avatar">
+                  <img itemprop="image" src="https://avatars.githubusercontent.com/u/1697736?v=3" alt="Jon Schneider">
+                </a>
+              <div class="post-author-info">
+                <h4 class="post-footer-heading">Written By</h4>
+                <a href="https://jkschneider.github.io/" itemprop="url" class="post-author-name">
+                  <span itemprop="name">Jon Schneider</span>
+                </a>
+                <p itemprop="description" class="post-author-bio"></p>
+                  <p class="post-author-location">Los Gatos, CA</p>
+                  <p class="post-author-website">
+                    <a href="https://jkschneider.github.io/" rel="nofollow">https://jkschneider.github.io/</a>
+                  </p>
+                <p class="post-info">
+                  <b class="post-info-title">Published on</b>
+                  <time class="post-date">August 12, 2015</time>
+                </p>
+              </div>
+            </div>
+            <div class="post-social">
+              <h4 class="post-footer-heading">Spread the word</h4>
+              <a href="#" data-action="share-twitter"><i class="fa fa-fw fa-lg fa-twitter"></i></a>
+              <a href="#" data-action="share-facebook"><i class="fa fa-fw fa-lg fa-facebook"></i></a>
+              <a href="#" data-action="share-gplus"><i class="fa fa-fw fa-lg fa-google-plus"></i></a>
+            </div>
+          </footer>
+        </section>
+      <section itemprop="comment" class="post-comments">
+        <div id="disqus_thread"></div>
+      </section>
     </article>
 
-</main>
+    <footer role="contentinfo" class="footer">
+      <p><small>Copyright &copy; <span itemprop="copyrightHolder">Jon Schneider</span>. 2016. All Rights Reserved.</small></p>
+      <p><small><a href="http://ghostium.oswaldoacauan.com/" target="_blank">Ghostium Theme</a> by <a href="http://twitter.com/oswaldoacauan" target="_blank">@oswaldoacauan</a></small></p>
+      <p><small>Adapted by <a href="https://twitter.com/mgreau">Maxime Gréau</a></small></p>
+      <p><small>Published with <a href="http://hubpress.io">HubPress</a></small></p>
+    </footer>
+  </div>
+</section>
 
-</div>
 
-</div>
+          </div>
+        </div>
+      </div>
+    </main>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
       <script type="text/javascript">
@@ -356,14 +424,7 @@ fn parse_dependency(dep: &amp;str) -&gt; Result&lt;Dependency, &amp;str&gt; {
         hljs.initHighlightingOnLoad();      
       </script>
 
-    <!--[if lte IE 8]>
-        <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1.0.0"></script>
-    <![endif]-->
-    <script type="text/javascript" src="//jkschneider.github.io/themes/ichi/assets/js/min/built.js?v=1.0.0"></script>
-
-    <script>
-      $(document).foundation();
-    </script>
+    <script src="//jkschneider.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1.0.0"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -375,5 +436,6 @@ fn parse_dependency(dep: &amp;str) -&gt; Result&lt;Dependency, &amp;str&gt; {
     ga('send', 'pageview');
 
     </script>
-</body>
+
+  </body>
 </html>
